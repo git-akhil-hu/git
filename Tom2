@@ -1,0 +1,53 @@
+pipeline {
+    agent none
+
+    tools {
+        maven 'maven'
+    }
+
+    stages {
+
+        stage('build') {
+            agent {
+                label 'build'
+            }
+
+            steps {
+                deleteDir()
+
+                sh '''
+                    git clone https://github.com/Jibin-G-Jiji/maven-demo.git
+
+                    cd maven-demo
+
+                    mvn clean package
+
+                    ls -l
+                '''
+
+                stash name: 'maven-project',
+                      includes: 'maven-demo/target/**'
+            }
+        }
+
+        stage('deploy') {
+            agent {
+                label 'deploy'
+            }
+
+            steps {
+                deleteDir()
+
+                unstash 'maven-project'
+
+                sh '''
+                    rm -f /opt/tomcat/webapps/*.war
+
+                    cp maven-demo/target/*.war /opt/tomcat/webapps/
+
+                    ls -l /opt/tomcat/webapps
+                '''
+            }
+        }
+    }
+}
